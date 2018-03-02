@@ -41,8 +41,9 @@ def extract_data(filename, num_images, start=0, IMAGE_SIZE=MNIST_IMAGE_SIZE):
         bytestream.read(IMAGE_SIZE * IMAGE_SIZE * start)
         buf = bytestream.read(IMAGE_SIZE * IMAGE_SIZE * num_images)
         data = np.frombuffer(buf, dtype=np.uint8).astype(np.float32)
-        scaled_data = np.array([x / PIXEL_DEPTH for x in data])
-        return scaled_data.reshape(num_images, IMAGE_SIZE*IMAGE_SIZE)
+        scaled_data = np.array([x / PIXEL_DEPTH for x in data]).reshape(num_images, IMAGE_SIZE, IMAGE_SIZE)
+        transposed_data = np.array([x.transpose().flatten() for x in scaled_data]) 
+        return transposed_data
 
 def extract_labels(filename, num_images, start=0):
     print('Extracting', filename)
