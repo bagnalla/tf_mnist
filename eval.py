@@ -29,7 +29,7 @@ def evaluate(sess, x, y, pred_op, images, labels, batch_size):
 
 def main(argv):
     model, save_images, NUM_CLASSES, IMAGE_SIZE, example_shape, load_data \
-        = choose_dataset('mnist')
+        = choose_dataset(FLAGS.dataset)
     train_data, validation_data, test_data = load_data()
     images = test_data.images if FLAGS.set == 0 else \
              validation_data.images if FLAGS.set == 1 else \
@@ -76,5 +76,11 @@ if __name__ == '__main__':
         default=0,
         help='0 to evaluate on test set, 1 for validation set, 2 for training set.'
     )
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default='mnist',
+        help='MNIST or EMNIST'
+    )    
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

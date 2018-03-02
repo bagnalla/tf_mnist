@@ -52,7 +52,7 @@ def train_model(model, x, y, loss_op, pred_op, train_images, train_labels):
 def main(argv):
     # Load parameters and data for the chosen dataset.
     model, save_images, NUM_CLASSES, IMAGE_SIZE, example_shape, load_data \
-        = choose_dataset('mnist')
+        = choose_dataset(FLAGS.dataset)
     train_data, _, _ = load_data()
 
     with tf.Graph().as_default():
@@ -107,6 +107,12 @@ if __name__ == '__main__':
         type=str,
         default='models/default',
         help='Directory to save the weights.'
+    )    
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default='mnist',
+        help='MNIST or EMNIST'
     )    
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
