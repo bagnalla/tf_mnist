@@ -40,11 +40,11 @@ def train_model(model, x, y, loss_op, pred_op, train_images, train_labels):
             start_time = cur_time
             print('Step %d (%.3f sec): loss = ' %
                   (minibatch_gen.counter, duration) + str(loss_values))
-            evaluate(sess, x, y, pred_op, train_images, train_labels,
-                     FLAGS.batch_size)
 
         if minibatch_gen.counter % 10000 == 0:
             model.save_weights(sess, FLAGS.model_dir)
+            evaluate(sess, x, y, pred_op, train_images, train_labels,
+                     FLAGS.batch_size)
 
     model.save_weights(sess, FLAGS.model_dir)
 

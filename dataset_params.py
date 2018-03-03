@@ -1,8 +1,7 @@
-# This file provides dataset-specific parameters and functions for MNIST
-# and CIFAR10.
+# This file provides dataset-specific parameters and functions for
+# MNIST and EMNIST.
 
-import os
-import gzip
+import gzip, os, pickle
 import tensorflow as tf
 import numpy as np
 from tensorflow.contrib.learn.python.learn.datasets.mnist import DataSet
@@ -76,6 +75,15 @@ def emnist_load_data():
     test = make_dataset(test_data, test_labels)
     return train, valid, test
 
+def emnist_load_extracted_data():
+    with open('emnist/train.pkl', 'rb') as f:
+        train = pickle.load(f)
+    with open('emnist/validation.pkl', 'rb') as f:
+        validation = pickle.load(f)
+    with open('emnist/test.pkl', 'rb') as f:
+        test = pickle.load(f)
+    return train, validation, test
+
 # MNIST and EMNIST are available
 def choose_dataset(set_name):
     if set_name.lower() == 'mnist':
@@ -84,6 +92,7 @@ def choose_dataset(set_name):
     elif set_name.lower() == 'emnist':
         # New data, but otherwise same as mnist
         return mnist_model, mnist_save_images, MNIST_NUM_CLASSES, \
-            MNIST_IMAGE_SIZE, mnist_example_shape, emnist_load_data
+            MNIST_IMAGE_SIZE, mnist_example_shape, emnist_load_extracted_data
+            # MNIST_IMAGE_SIZE, mnist_example_shape, emnist_load_data
     else:
         return None
