@@ -4,7 +4,9 @@ import tensorflow as tf
 NUM_CLASSES = 10
 IMAGE_SIZE = 28
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
-HIDDEN_SIZE = 10
+NUM_HIDDEN_LAYERS = 1
+HIDDEN_SIZES = [10]
+INCLUDE_BIASES = False
 WEIGHT_DECAY = 0.00002
 
 
@@ -13,19 +15,35 @@ WEIGHT_DECAY = 0.00002
 # loss function.
 def inference(images, name='m0', reuse=None):
     with tf.variable_scope(name, reuse=reuse):
-        w1 = tf.get_variable("w1", (IMAGE_PIXELS, HIDDEN_SIZE),
+        sizes = HIDDEN_SIZES + [NUM_CLASSES]
+        w0 = tf.get_variable('w0',
+                             (IMAGE_PIXELS, sizes[0]
+                              if NUM_HIDDEN_LAYERS > 0 else NUM_CLASSES),
                              initializer=tf.contrib.layers.xavier_initializer())
-        b1 = tf.get_variable("b1", [HIDDEN_SIZE],
-                             initializer=tf.contrib.layers.xavier_initializer())
-        w2 = tf.get_variable("w2", (HIDDEN_SIZE, NUM_CLASSES),
-                             initializer=tf.contrib.layers.xavier_initializer())
-        l1 = tf.nn.relu(tf.matmul(images, w1) + b1)
-        l2 = tf.matmul(l1, w2)
-        # add weight decay to 'losses" collection
-        weight_decay = tf.multiply(tf.nn.l2_loss(w1) + tf.nn.l2_loss(w2),
+        ws = [w0] + [tf.get_variable(
+            'w' + str(i+1), [sizes[i], sizes[i+1]],
+            initializer=tf.contrib.layers.xavier_initializer())
+                     for i in range(NUM_HIDDEN_LAYERS)]
+        weight_decay = tf.multiply(sum([tf.nn.l2_loss(w) for w in ws]),
                                    WEIGHT_DECAY, name='weight_loss')
         tf.add_to_collection('losses', weight_decay)
-        return l2
+        if INCLUDE_BIASES:
+            b0 = tf.get_variable(
+                'b0', [sizes[0]],
+                initializer=tf.contrib.layers.xavier_initializer())
+            bs = [b0] + [tf.get_variable(
+                'b' + str(i+1), [sizes[i+1]],
+                initializer=tf.contrib.layers.xavier_initializer())
+                         for i in range(NUM_HIDDEN_LAYERS)]
+            ls = [tf.nn.relu(tf.matmul(images, w0) + b0)]
+            for i in range(NUM_HIDDEN_LAYERS-1):
+                ls.append(tf.nn.relu(tf.matmul(ls[i], ws[i+1]) + bs[i+1]))
+        else:
+            ls = [tf.nn.relu(tf.matmul(images, w0))]
+            for i in range(NUM_HIDDEN_LAYERS-1):
+                ls.append(tf.nn.relu(tf.matmul(ls[i], ws[i+1])))
+        out = tf.matmul(ls[-1], ws[-1])
+        return out
 
 
 # The loss op. Take average cross-entropy loss over all of the
@@ -70,15 +88,21 @@ def save_weights(sess, dir='models'):
 
 
 def load_weights(sess, dir, model_name='m0'):
-    i = 0
     filename = dir + '/mnist_params.pkl.gz' if dir else 'mnist_params.pkl.gz'
     with gzip.open(filename, 'rb') as f:
         weights = pickle.load(f, encoding='latin1')
-        w1, b1, w2 = tuple(weights[i:i+3])
-        i += 3
         with tf.variable_scope(model_name, reuse=True):
-            w1_var = tf.get_variable("w1", (IMAGE_PIXELS, HIDDEN_SIZE))
-            b1_var = tf.get_variable("b1", (HIDDEN_SIZE))
-            w2_var = tf.get_variable("w2", (HIDDEN_SIZE, NUM_CLASSES))
-            sess.run([w1_var.assign(w1), b1_var.assign(b1),
-                      w2_var.assign(w2)])
+            sizes = [IMAGE_PIXELS] + HIDDEN_SIZES + [NUM_CLASSES]
+            if INCLUDE_BIASES:
+                for i in range(NUM_HIDDEN_LAYERS+1):
+                    w_var = tf.get_variable('w' + str(i),
+                                            [sizes[i], sizes[i+1]])
+                    b_var = tf.get_variable('b' + str(i),
+                                            [sizes[i+1]])
+                    sess.run([w_var.assign(weights[2*i]),
+                              b_var.assign(weights[2*i+1])])
+            else:
+                for i in range(NUM_HIDDEN_LAYERS+1):
+                    w_var = tf.get_variable('w' + str(i),
+                                            [sizes[i], sizes[i+1]])
+                    sess.run([w_var.assign(weights[i])])

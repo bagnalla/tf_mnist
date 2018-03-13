@@ -21,7 +21,7 @@ def train_model(model, x, y, loss_op, pred_op, train_images, train_labels):
 
     sess = init_session()
     minibatch_gen = batch_gen(FLAGS.batch_size, train_images.shape[0],
-                              max_batches=FLAGS.max_steps)
+                              max_batches=FLAGS.max_steps, replace=True)
 
     print("training model...")
 
