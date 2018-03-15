@@ -4,8 +4,8 @@ import tensorflow as tf
 NUM_CLASSES = 10
 IMAGE_SIZE = 28
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
-NUM_HIDDEN_LAYERS = 1
-HIDDEN_SIZES = [10]
+NUM_HIDDEN_LAYERS = 0
+HIDDEN_SIZES = [] # length should equal NUM_HIDDEN_LAYERS
 INCLUDE_BIASES = False
 WEIGHT_DECAY = 0.00002
 
@@ -17,8 +17,9 @@ def inference(images, name='m0', reuse=None):
     with tf.variable_scope(name, reuse=reuse):
         sizes = HIDDEN_SIZES + [NUM_CLASSES]
         w0 = tf.get_variable('w0',
-                             (IMAGE_PIXELS, sizes[0]
-                              if NUM_HIDDEN_LAYERS > 0 else NUM_CLASSES),
+                             (IMAGE_PIXELS,
+                              (sizes[0]
+                               if NUM_HIDDEN_LAYERS > 0 else NUM_CLASSES)),
                              initializer=tf.contrib.layers.xavier_initializer())
         ws = [w0] + [tf.get_variable(
             'w' + str(i+1), [sizes[i], sizes[i+1]],
@@ -27,6 +28,7 @@ def inference(images, name='m0', reuse=None):
         weight_decay = tf.multiply(sum([tf.nn.l2_loss(w) for w in ws]),
                                    WEIGHT_DECAY, name='weight_loss')
         tf.add_to_collection('losses', weight_decay)
+        l = images
         if INCLUDE_BIASES:
             b0 = tf.get_variable(
                 'b0', [sizes[0]],
@@ -35,14 +37,15 @@ def inference(images, name='m0', reuse=None):
                 'b' + str(i+1), [sizes[i+1]],
                 initializer=tf.contrib.layers.xavier_initializer())
                          for i in range(NUM_HIDDEN_LAYERS)]
-            ls = [tf.nn.relu(tf.matmul(images, w0) + b0)]
-            for i in range(NUM_HIDDEN_LAYERS-1):
-                ls.append(tf.nn.relu(tf.matmul(ls[i], ws[i+1]) + bs[i+1]))
+            # ls = [tf.nn.relu(tf.matmul(images, w0) + b0)]
+            # for i in range(NUM_HIDDEN_LAYERS-1):
+            #     ls.append(tf.nn.relu(tf.matmul(ls[i], ws[i+1]) + bs[i+1]))
+            for i in range(NUM_HIDDEN_LAYERS):
+                l = tf.nn.relu(tf.matmul(l, ws[i] + bs[i]))
         else:
-            ls = [tf.nn.relu(tf.matmul(images, w0))]
-            for i in range(NUM_HIDDEN_LAYERS-1):
-                ls.append(tf.nn.relu(tf.matmul(ls[i], ws[i+1])))
-        out = tf.matmul(ls[-1], ws[-1])
+            for i in range(NUM_HIDDEN_LAYERS):
+                l = tf.nn.relu(tf.matmul(l, ws[i]))
+        out = tf.matmul(l, ws[-1])
         return out
 
 
