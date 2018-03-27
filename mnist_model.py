@@ -4,8 +4,8 @@ import tensorflow as tf
 NUM_CLASSES = 10
 IMAGE_SIZE = 28
 IMAGE_PIXELS = IMAGE_SIZE * IMAGE_SIZE
-NUM_HIDDEN_LAYERS = 0
-HIDDEN_SIZES = [] # length should equal NUM_HIDDEN_LAYERS
+NUM_HIDDEN_LAYERS = 1
+HIDDEN_SIZES = [5] # length should equal NUM_HIDDEN_LAYERS
 INCLUDE_BIASES = False
 WEIGHT_DECAY = 0.00002
 
@@ -37,9 +37,6 @@ def inference(images, name='m0', reuse=None):
                 'b' + str(i+1), [sizes[i+1]],
                 initializer=tf.contrib.layers.xavier_initializer())
                          for i in range(NUM_HIDDEN_LAYERS)]
-            # ls = [tf.nn.relu(tf.matmul(images, w0) + b0)]
-            # for i in range(NUM_HIDDEN_LAYERS-1):
-            #     ls.append(tf.nn.relu(tf.matmul(ls[i], ws[i+1]) + bs[i+1]))
             for i in range(NUM_HIDDEN_LAYERS):
                 l = tf.nn.relu(tf.matmul(l, ws[i] + bs[i]))
         else:
@@ -47,7 +44,6 @@ def inference(images, name='m0', reuse=None):
                 l = tf.nn.relu(tf.matmul(l, ws[i]))
         out = tf.matmul(l, ws[-1])
         return out
-
 
 # The loss op. Take average cross-entropy loss over all of the
 # examples in the batch and add the weight decay term.

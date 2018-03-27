@@ -2,7 +2,7 @@ import argparse, sys, pickle
 import numpy as np
 import tensorflow as tf
 from dataset_params import choose_dataset
-from util import run_batches
+from util import run_batches, save_mnist_images
 
 FLAGS = None
 
@@ -26,6 +26,16 @@ def evaluate(sess, x, y, pred_op, images, labels, batch_size):
     acc = np.sum(preds == labels) / len(labels)
     print("accuracy: %0.04f" % acc)
 
+def compute_logits(sess, x, logits_op, images, batch_size):
+    images = images[:100]
+    logits = run_batches(sess, logits_op, [x], [images], batch_size)
+    for l in logits:
+        print(l)
+
+def compute_predictions(sess, x, preds_op, images, batch_size):
+    images = images[:100]
+    preds = run_batches(sess, preds_op, [x], [images], batch_size)
+    print(preds)
 
 def main(argv):
     model, save_images, NUM_CLASSES, IMAGE_SIZE, example_shape, load_data \
@@ -48,6 +58,8 @@ def main(argv):
         model.load_weights(sess, FLAGS.model_dir)
 
         evaluate(sess, x, y, pred_op, images, labels, FLAGS.batch_size)
+        compute_logits(sess, x, logits, images, FLAGS.batch_size)
+        compute_predictions(sess, x, pred_op, images, FLAGS.batch_size)
 
 
 if __name__ == '__main__':
